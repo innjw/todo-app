@@ -1,26 +1,45 @@
-"use client";
+'use client'
 
-import { useTodoStore } from "@/store/todoStore";
+import { useTodoStore } from '@/store/todoStore'
 
 export function StatsBar() {
-  const { todos } = useTodoStore();
-  const total = todos.length;
-  const completed = todos.filter((t) => t.completed).length;
-  const progress = total === 0 ? 0 : Math.round((completed / total) * 100);
+  const { getStats } = useTodoStore()
+  const { total, completed, active } = getStats()
+  const progress = total === 0 ? 0 : Math.round((completed / total) * 100)
 
   return (
-    <div className="space-y-2">
-      <div className="flex justify-between items-center">
-        <span className="text-xs text-gray-500">오늘의 진행률</span>
-        <span className="text-xs font-semibold text-gray-700">{completed}/{total} 완료</span>
+    <div className="space-y-3">
+      {/* Stat counters */}
+      <div className="grid grid-cols-3 gap-3">
+        <StatCard label="전체" value={total} />
+        <StatCard label="진행중" value={active} />
+        <StatCard label="완료" value={completed} />
       </div>
-      <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-        <div
-          className="h-full bg-gray-800 rounded-full transition-all duration-500"
-          style={{ width: `${progress}%` }}
-        />
+
+      {/* Progress bar */}
+      <div className="space-y-1.5">
+        <div className="flex justify-between items-center">
+          <span className="text-xs text-muted-foreground">진행률</span>
+          <span className="text-xs font-semibold text-foreground">
+            {progress}%
+          </span>
+        </div>
+        <div className="h-2 bg-muted rounded-full overflow-hidden">
+          <div
+            className="h-full bg-primary rounded-full transition-all duration-500 ease-out"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
       </div>
-      <p className="text-xs text-gray-400 text-right">{progress}%</p>
     </div>
-  );
+  )
+}
+
+function StatCard({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="text-center p-3 rounded-xl bg-muted/50 border border-border">
+      <p className="text-2xl font-bold text-foreground">{value}</p>
+      <p className="text-xs text-muted-foreground mt-0.5">{label}</p>
+    </div>
+  )
 }

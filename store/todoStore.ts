@@ -1,63 +1,100 @@
-import { create } from "zustand";
-import { persist } from "zustand/middleware";
-import { Todo, Priority, Category } from "@/types/todo";
-import mockTodos from "@/mocks/todos.json";
+import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
+import type { Todo, Priority, Category, FilterType } from '@/types/todo'
 
-interface TodoStore {
-  todos: Todo[];
-  filter: "all" | "active" | "completed";
-  categoryFilter: Category | "all";
-  addTodo: (title: string, priority: Priority, category: Category, dueDate?: string) => void;
-  toggleTodo: (id: string) => void;
-  deleteTodo: (id: string) => void;
-  setFilter: (filter: "all" | "active" | "completed") => void;
-  setCategoryFilter: (category: Category | "all") => void;
-  clearCompleted: () => void;
+interface TodoState {
+  todos: Todo[]
+  filter: FilterType
+
+  addTodo: (text: string, priority: Priority, category: Category) => void
+  removeTodo: (id: string) => void
+  toggleTodo: (id: string) => void
+  updateTodo: (id: string, text: string) => void
+  setFilter: (filter: FilterType) => void
+  clearCompleted: () => void
+
+  getFilteredTodos: () => Todo[]
+  getStats: () => { total: number; completed: number; active: number }
 }
 
-export const useTodoStore = create<TodoStore>()(
+export const useTodoStore = create<TodoState>()(
   persist(
-    (set) => ({
-      todos: mockTodos as Todo[],
-      filter: "all",
-      categoryFilter: "all",
+    (set, get) => ({
+      todos: [],
+      filter: 'all',
 
-      addTodo: (title, priority, category, dueDate) =>
-        set((state) => ({
-          todos: [
-            {
-              id: Date.now().toString(),
-              title,
-              completed: false,
-              priority,
-              category,
-              createdAt: new Date().toISOString(),
-              dueDate,
-            },
-            ...state.todos,
-          ],
-        })),
+      addTodo: (text, priority, category) => {
+        const trimmed = text.trim()
+        if (!trimmed) return
 
-      toggleTodo: (id) =>
+        const newTodo: Todo = {
+          id: crypto.randomUUID(),
+          text: trimmed,
+          completed: false,
+          priority,
+          category,
+          createdAt: Date.now(),
+        }
+        set((state) => ({ todos: [newTodo, ...state.todos] }))
+      },
+
+      removeTodo: (id) => {
+        set((state) => ({ todos: state.todos.filter((t) => t.id !== id) }))
+      },
+
+      toggleTodo: (id) => {
         set((state) => ({
-          todos: state.todos.map((todo) =>
-            todo.id === id ? { ...todo, completed: !todo.completed } : todo
+          todos: state.todos.map((t) =>
+            t.id === id ? { ...t, completed: !t.completed } : t
           ),
-        })),
+        }))
+      },
 
-      deleteTodo: (id) =>
+      updateTodo: (id, text) => {
+        const trimmed = text.trim()
+        if (!trimmed) return
+
         set((state) => ({
-          todos: state.todos.filter((todo) => todo.id !== id),
-        })),
+          todos: state.todos.map((t) =>
+            t.id === id ? { ...t, text: trimmed } : t
+          ),
+        }))
+      },
 
       setFilter: (filter) => set({ filter }),
-      setCategoryFilter: (categoryFilter) => set({ categoryFilter }),
 
-      clearCompleted: () =>
+      clearCompleted: () => {
         set((state) => ({
-          todos: state.todos.filter((todo) => !todo.completed),
-        })),
+          todos: state.todos.filter((t) => !t.completed),
+        }))
+      },
+
+      getFilteredTodos: () => {
+        const { todos, filter } = get()
+        switch (filter) {
+          case 'all':
+            return todos
+          case 'active':
+            return todos.filter((t) => !t.completed)
+          case 'completed':
+            return todos.filter((t) => t.completed)
+          default:
+            return todos.filter((t) => t.category === filter)
+        }
+      },
+
+      getStats: () => {
+        const { todos } = get()
+        const completed = todos.filter((t) => t.completed).length
+        return {
+          total: todos.length,
+          completed,
+          active: todos.length - completed,
+        }
+      },
     }),
-    { name: "todo-storage" }
+    {
+      name: 'todo-storage',
+    }
   )
-);
+)

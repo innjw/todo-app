@@ -1,54 +1,52 @@
-"use client";
+'use client'
 
-import { useTodoStore } from "@/store/todoStore";
-import { Category } from "@/types/todo";
-import { Button } from "@/components/ui/button";
+import { useTodoStore } from '@/store/todoStore'
+import { Button } from '@/components/ui/button'
+import { FILTER_OPTIONS, type FilterType } from '@/types/todo'
 
-const categories: { value: Category | "all"; label: string }[] = [
-  { value: "all", label: "전체" },
-  { value: "work", label: "💼 업무" },
-  { value: "personal", label: "🏠 개인" },
-  { value: "study", label: "📚 학습" },
-  { value: "health", label: "💪 건강" },
-  { value: "other", label: "📌 기타" },
-];
+const STATUS_FILTERS: FilterType[] = ['all', 'active', 'completed']
+const CATEGORY_FILTERS: FilterType[] = ['work', 'personal', 'shopping', 'other']
 
 export function FilterBar() {
-  const { todos, filter, categoryFilter, setFilter, setCategoryFilter, clearCompleted } =
-    useTodoStore();
+  const { filter, setFilter, clearCompleted, getStats } = useTodoStore()
+  const { completed } = getStats()
 
-  const activeCount = todos.filter((t) => !t.completed).length;
-  const completedCount = todos.filter((t) => t.completed).length;
+  const statusOptions = FILTER_OPTIONS.filter((o) =>
+    STATUS_FILTERS.includes(o.value)
+  )
+  const categoryOptions = FILTER_OPTIONS.filter((o) =>
+    CATEGORY_FILTERS.includes(o.value)
+  )
 
   return (
     <div className="space-y-3">
-      {/* Status filter */}
-      <div className="flex gap-1 p-1 bg-gray-100 rounded-xl">
-        {(["all", "active", "completed"] as const).map((f) => (
+      {/* Status filter - pill toggle */}
+      <div className="flex gap-1 p-1 bg-muted rounded-xl">
+        {statusOptions.map(({ value, label }) => (
           <button
-            key={f}
-            onClick={() => setFilter(f)}
+            key={value}
+            onClick={() => setFilter(value)}
             className={`flex-1 text-xs font-medium py-1.5 rounded-lg transition-all ${
-              filter === f
-                ? "bg-white text-gray-900 shadow-sm"
-                : "text-gray-500 hover:text-gray-700"
+              filter === value
+                ? 'bg-card text-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground'
             }`}
           >
-            {f === "all" ? `전체 ${todos.length}` : f === "active" ? `진행중 ${activeCount}` : `완료 ${completedCount}`}
+            {label}
           </button>
         ))}
       </div>
 
-      {/* Category filter */}
+      {/* Category filter - chips */}
       <div className="flex gap-1.5 flex-wrap">
-        {categories.map(({ value, label }) => (
+        {categoryOptions.map(({ value, label }) => (
           <button
             key={value}
-            onClick={() => setCategoryFilter(value)}
+            onClick={() => setFilter(filter === value ? 'all' : value)}
             className={`text-xs px-3 py-1 rounded-full border transition-all ${
-              categoryFilter === value
-                ? "bg-gray-900 text-white border-gray-900"
-                : "bg-white text-gray-500 border-gray-200 hover:border-gray-400"
+              filter === value
+                ? 'bg-primary text-primary-foreground border-primary'
+                : 'bg-card text-muted-foreground border-border hover:border-foreground/30'
             }`}
           >
             {label}
@@ -57,18 +55,18 @@ export function FilterBar() {
       </div>
 
       {/* Clear completed */}
-      {completedCount > 0 && (
+      {completed > 0 && (
         <div className="flex justify-end">
           <Button
             variant="ghost"
             size="sm"
             onClick={clearCompleted}
-            className="text-xs text-gray-400 hover:text-red-500 h-7"
+            className="text-xs text-muted-foreground hover:text-destructive h-7"
           >
-            완료된 항목 삭제 ({completedCount})
+            완료된 항목 삭제 ({completed})
           </Button>
         </div>
       )}
     </div>
-  );
+  )
 }
