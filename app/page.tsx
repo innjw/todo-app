@@ -1,12 +1,20 @@
 'use client'
 
+import { useEffect } from 'react'
 import { AddTodoForm } from '@/components/molecules/AddTodoForm'
 import { TodoList } from '@/components/organisms/TodoList'
 import { FilterBar } from '@/components/organisms/FilterBar'
 import { StatsBar } from '@/components/organisms/StatsBar'
 import { Separator } from '@/components/ui/separator'
+import { useTodoStore } from '@/store/todoStore'
 
 export default function Home() {
+  const fetchTodos = useTodoStore((s) => s.fetchTodos)
+
+  useEffect(() => {
+    fetchTodos()
+  }, [fetchTodos])
+
   return (
     <div className="min-h-screen bg-background">
       <div className="max-w-lg mx-auto px-4 py-10">
